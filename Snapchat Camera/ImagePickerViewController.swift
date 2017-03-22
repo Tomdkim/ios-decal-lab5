@@ -11,7 +11,7 @@ import UIKit
 import AVFoundation
 
 // TODO: you'll need to edit this line to make your class conform to the AVCapturePhotoCaptureDelegate protocol
-class ImagePickerViewController: UIViewController {
+class ImagePickerViewController: UIViewController, AVCapturePhotoCaptureDelegate {
 
     // manages real time capture activity from input devices to create output media (photo/video)
     let captureSession = AVCaptureSession()
@@ -66,11 +66,27 @@ class ImagePickerViewController: UIViewController {
         // TODO: Replace the following code as per instructions in the spec.
         // Instead of sending a squirrel pic every time, here we will want
         // to start the process of creating a photo from our photoOutput
-        if let squirrelImage = UIImage(named: "squirrel") {
-            selectedImage = squirrelImage
-            toggleUI(isInPreviewMode: true)
+//        if let squirrelImage = UIImage(named: "squirrel") {
+//            selectedImage = squirrelImage
+//            toggleUI(isInPreviewMode: true)
+//        }
+        photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+    }
+    
+    /// Provides the delegate a captured image in a processed format (such as JPEG).
+    func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?, previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Error?) {
+        if let photoSampleBuffer = photoSampleBuffer {
+            // First, get the photo data using the parameters above
+            let photoData = AVCapturePhotoOutput.jpegPhotoDataRepresentation(forJPEGSampleBuffer: photoSampleBuffer, previewPhotoSampleBuffer: previewPhotoSampleBuffer)
+                
+                // Then use this data to create a UIImage, and set it equal to `selectedImage`
+                selectedImage = UIImage.init(data: photoData!)!
+            
+                    // This method updates the UI so the send button appears (no need to edit it)
+                    toggleUI(isInPreviewMode: true)
         }
     }
+    
     
     
     /// If the front camera is being used, switches to the back camera,
@@ -158,7 +174,7 @@ class ImagePickerViewController: UIViewController {
                             // Now we can begin capturing the session using the user's device!
                             do {
                                 // TODO: uncomment this line, and add a parameter to `addInput`
-                                try captureSession.addInput(AVCapture​Device​Input(captureDevice: AVCaptureDevice!))
+                                try captureSession.addInput(AVCaptureDeviceInput(device: captureDevice))
                                 
                                 if captureSession.canAddOutput(photoOutput) {
                                     captureSession.addOutput(photoOutput)
@@ -168,11 +184,12 @@ class ImagePickerViewController: UIViewController {
                                 print(error.localizedDescription)
                             }
                             
-                            if let previewLayer = previewLayer { /* TODO: replace this line by creating preview layer from session */
+                            if let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession) {
+//                            if let previewLayer = previewLayer { /* TODO: replace this line by creating preview layer from session */
                                 view.layer.addSublayer(previewLayer)
                                 previewLayer.frame = view.layer.frame
                                 // TODO: start running your session
-                                
+                                captureSession.startRunning()
                             }
                         }
                     }
